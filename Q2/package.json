@@ -1,0 +1,22 @@
+{
+  "author": "Bryan Lin",
+  "name": "simple-backing-system",
+  "version": "1.0.0",
+  "description": "A simple banking system for meepshop assignment",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch & node dist/indes.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "ts-node-dev": "^2.0.0",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.5.2",
+    "typescript": "^5.9.2"
+  }
+}
