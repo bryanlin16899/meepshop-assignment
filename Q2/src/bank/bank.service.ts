@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import { Account } from "../schema";
-import { CreateAccountRequest, DepositRequest, withdrawRequest as WithdrawRequest } from "./types";
+import { CreateAccountRequest, DepositRequest, TransferRequest, withdrawRequest as WithdrawRequest } from "./types";
 
 export class BankService {
     private accounts: Map<string, Account> = new Map(); 
@@ -59,11 +59,12 @@ export class BankService {
         return account;
     }
 
+    // 從指定帳戶提取金額
     withdraw(request: WithdrawRequest): Account {
         const { id, amount } = request;
 
         if (amount <= 0) {
-            throw new Error("提款金額不能為負值。")
+            throw new Error("提款金額不能為負值。");
         }
 
         const account = this.getAccount(id);
@@ -75,5 +76,32 @@ export class BankService {
         //TODO 紀錄 transaction
 
         return account;
+    }
+
+    // 轉帳
+    transfer(request: TransferRequest): { fromAccount: Account; toAccount: Account; } {
+        const { fromAccountId, toAccountId, amount } = request;
+
+        if (amount <= 0) {
+            throw new Error("提款金額不能為負值。");
+        }
+
+        if (fromAccountId === toAccountId) {
+        throw new Error('Cannot transfer to the same account');
+        }
+
+        const fromAccount = this.getAccount(fromAccountId);
+        const toAccount = this.getAccount(toAccountId);
+
+        if (fromAccount.balance < amount) {
+            throw new Error(`${fromAccount.id} 金額不足。餘額：${fromAccount.balance}`);
+        }
+
+        fromAccount.balance -= amount;
+        toAccount.balance += amount;
+
+        //TODO 紀錄 transaction
+
+        return { fromAccount, toAccount };
     }
 }

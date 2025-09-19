@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
 import validate from "../validation/validation";
-import { createAccountSchema, depositWithdrawSchema } from "../validation/validationSchemas";
+import { createAccountSchema, depositWithdrawSchema, transferSchema } from "../validation/validationSchemas";
 import { BankService } from "./bank.service";
 import {
     ApiResponse,
@@ -93,6 +93,24 @@ router.post(
         try {
             const account = bankService.withdraw(req.body);
             res.json({ success: true, data: account });
+        } catch (error) {
+            //TODO Error handling
+            res.status(500).json({ success: false, error: 'Internal server error' });
+        }
+    }
+)
+
+// 轉帳
+router.post(
+    '/transfer',
+    validate(transferSchema),
+    (
+        req: Request,
+        res: Response
+    ) => {
+        try {
+            const result = bankService.transfer(req.body);
+            res.json({ success: true, data: result });
         } catch (error) {
             //TODO Error handling
             res.status(500).json({ success: false, error: 'Internal server error' });

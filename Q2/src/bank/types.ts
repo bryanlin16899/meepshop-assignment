@@ -14,6 +14,10 @@ export interface DepositRequest {
   amount: number;
 }
 
-export interface withdrawRequest extends DepositRequest {
-  
+export interface withdrawRequest extends DepositRequest {}
+
+export interface TransferRequest {
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
 }
