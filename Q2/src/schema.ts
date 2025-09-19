@@ -2,6 +2,7 @@
 // 銀行帳號
 export interface Account {
     id: string;
+    name: string;
     balance: number;
     createdAt: Date;
 }

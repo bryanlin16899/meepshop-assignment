@@ -6,4 +6,5 @@ export interface ApiResponse<T> {
 
 export interface CreateAccountRequest {
   initialBalance?: number;
+  name: string;
 }

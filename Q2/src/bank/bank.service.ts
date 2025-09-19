@@ -6,8 +6,8 @@ export class BankService {
     private accounts: Map<string, Account> = new Map(); 
     private accountTransactions: Map<string, string[]> = new Map();
 
-    createAccount(request: CreateAccountRequest = {}): Account {
-        const { initialBalance = 0 } = request;
+    createAccount(request: CreateAccountRequest): Account {
+        const { initialBalance = 0, name } = request;
 
         if (initialBalance < 0) {
             throw new Error("存款不能為負值。")
@@ -15,6 +15,7 @@ export class BankService {
 
         const account: Account = {
             id: uuid(),
+            name: name,
             balance: initialBalance,
             createdAt: new Date()
         };
@@ -25,5 +26,17 @@ export class BankService {
         //TODO 紀錄 transaction
 
         return account;
+    }
+
+    getAllAccounts(): Account[] {
+        return Array.from(this.accounts.values())
+    }
+
+    getAccount(accountId: string): Account {
+        const account = this.accounts.get(accountId)
+        if (!account) {
+            throw new Error("該帳戶不存在")
+        }
+        return account
     }
 }
