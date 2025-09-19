@@ -1,9 +1,10 @@
 import { v4 as uuid } from 'uuid';
-import { Account } from "../schema";
+import { Account, Transaction, TransactionType } from "../schema";
 import { CreateAccountRequest, DepositRequest, TransferRequest, withdrawRequest as WithdrawRequest } from "./types";
 
 export class BankService {
     private accounts: Map<string, Account> = new Map(); 
+    private transactions: Map<string, Transaction> = new Map();
     private accountTransactions: Map<string, string[]> = new Map();
 
     // 新建帳戶
@@ -24,7 +25,16 @@ export class BankService {
         this.accounts.set(account.id, account);
         this.accountTransactions.set(account.id, []);
 
-        //TODO 紀錄 transaction
+        // 建立帳戶時有預設金額才會記錄 transaction
+        if (initialBalance > 0) {
+            this.recordTransaction({
+                fromAccountId: null,
+                toAccountId: account.id,
+                amount: initialBalance,
+                type: TransactionType.DEPOSIT,
+                description: "建立帳戶時存入。"
+            })
+        }
 
         return account;
     }
@@ -54,7 +64,12 @@ export class BankService {
         const account = this.getAccount(id);
         account.balance += amount;
 
-        //TODO 紀錄 transaction
+        this.recordTransaction({
+            fromAccountId: null,
+            toAccountId: id,
+            amount,
+            type: TransactionType.DEPOSIT
+        })
 
         return account;
     }
@@ -73,7 +88,12 @@ export class BankService {
         }
         account.balance -= amount
 
-        //TODO 紀錄 transaction
+        this.recordTransaction({
+            fromAccountId: null,
+            toAccountId: id,
+            amount,
+            type: TransactionType.WITHDRAWAL
+        })
 
         return account;
     }
@@ -103,5 +123,37 @@ export class BankService {
         //TODO 紀錄 transaction
 
         return { fromAccount, toAccount };
+    }
+
+    // util function, 用來儲存交易紀錄
+    private recordTransaction(
+        transactionData: {
+            fromAccountId: string | null;
+            toAccountId: string | null;
+            amount: number;
+            type: TransactionType;
+            description?: string;
+    }): Transaction {
+        const transaction: Transaction = {
+            id: uuid(),
+            ...transactionData,
+            createAt: new Date()
+        };
+
+        this.transactions.set(transaction.id, transaction);
+
+        if (transaction.fromAccountId) {
+            const fromTransactions = this.accountTransactions.get(transaction.fromAccountId) || [];
+            fromTransactions.push(transaction.id);
+            this.accountTransactions.set(transaction.fromAccountId, fromTransactions);
+        }
+
+        if (transaction.toAccountId) {
+            const toTransactions = this.accountTransactions.get(transaction.toAccountId) || [];
+            toTransactions.push(transaction.id);
+            this.accountTransactions.set(transaction.toAccountId, toTransactions);
+        }
+
+        return transaction;
     }
 }
