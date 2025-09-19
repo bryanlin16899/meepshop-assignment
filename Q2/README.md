@@ -19,22 +19,22 @@
     </tr>
     <tr>
         <td>Create an account with name and balance</td>
-        <td></td>
+        <td>✅</td>
         <td></td>
     </tr>
     <tr>
         <td>Able to deposit money to an account</td>
-        <td></td>
+        <td>✅</td>
         <td></td>
     </tr>
     <tr>
         <td>Able to withdraw money from an account</td>
-        <td></td>
+        <td>✅</td>
         <td></td>
     </tr>
     <tr>
         <td>Able to transfer money from one account to another account</td>
-        <td></td>
+        <td>✅</td>
         <td></td>
     </tr>
     <tr>
@@ -62,7 +62,7 @@
 ## Technical Stacks
 - Language: Typescript
 - Framework: Express
-- Database: SQLite
+- Database: No Database, I save data in memory using Map
 - Testing: 
 - Documentation: Swagger
 

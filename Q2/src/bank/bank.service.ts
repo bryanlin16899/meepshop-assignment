@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import { Account, Transaction, TransactionType } from "../schema";
-import { CreateAccountRequest, DepositRequest, TransferRequest, withdrawRequest as WithdrawRequest } from "./types";
+import { CreateAccountRequest, DepositRequest, TransactionHistoryResponse, TransferRequest, withdrawRequest as WithdrawRequest } from "./types";
 
 export class BankService {
     private accounts: Map<string, Account> = new Map(); 
@@ -120,9 +120,33 @@ export class BankService {
         fromAccount.balance -= amount;
         toAccount.balance += amount;
 
-        //TODO 紀錄 transaction
+        this.recordTransaction({
+            fromAccountId: fromAccountId,
+            toAccountId: toAccountId,
+            amount,
+            type: TransactionType.TRANSFER
+        })
 
         return { fromAccount, toAccount };
+    }
+
+    // 取得所有交易紀錄
+    getAllTransactionLogs(): Transaction[] {
+        return Array.from(this.transactions.values())
+            .sort((a, b) => b.createAt.getTime() - a.createAt.getTime());
+    }
+
+    // 取得各別帳號的交易紀錄，從 transactions filter out accountTransactions
+    getAccountTransactionLogs(accountId: string): TransactionHistoryResponse{
+        this.getAccount(accountId)
+
+        const transactionIds = this.accountTransactions.get(accountId) || [];
+        const transactions = transactionIds.map(id => this.transactions.get(id)).filter((transaction): transaction is Transaction => transaction != undefined).sort((a, b) => b.createAt.getTime() - a.createAt.getTime());
+
+        return {
+            accountId,
+            transactions
+        }
     }
 
     // util function, 用來儲存交易紀錄

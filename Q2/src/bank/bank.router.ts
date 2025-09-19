@@ -117,4 +117,38 @@ router.post(
         }
     }
 )
+
+// 取得所有交易紀錄
+router.get(
+    '/getAllTransactionLogs',
+    (
+        req: Request,
+        res: Response
+    ) => {
+        try {
+            const history = bankService.getAllTransactionLogs();
+            res.json({ success: true, data: history });
+        } catch (error) {
+            //TODO Error handling
+            res.status(500).json({ success: false, error: 'Internal server error' });
+        }
+    }
+)
+
+// 取得各別帳號的交易紀錄
+router.get(
+    '/getAccountTransactionLogs',
+    (
+        req: Request<any, any, any, { id: string }>,
+        res: Response
+    ) => {
+        try {
+            const history = bankService.getAccountTransactionLogs(req.query.id);
+            res.json({ success: true, data: history });
+        } catch (error) {
+            //TODO Error handling
+            res.status(500).json({ success: false, error: 'Internal server error' });
+        }
+    }
+)
 export default router

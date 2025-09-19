@@ -1,3 +1,5 @@
+import { Transaction } from "../schema";
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -20,4 +22,9 @@ export interface TransferRequest {
   fromAccountId: string;
   toAccountId: string;
   amount: number;
+}
+
+export interface TransactionHistoryResponse {
+  accountId: string;
+  transactions: Transaction[];
 }
