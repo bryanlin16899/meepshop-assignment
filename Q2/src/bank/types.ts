@@ -8,3 +8,12 @@ export interface CreateAccountRequest {
   initialBalance?: number;
   name: string;
 }
+
+export interface DepositRequest {
+  id: string;
+  amount: number;
+}
+
+export interface withdrawRequest extends DepositRequest {
+  
+}

@@ -9,3 +9,13 @@ export const createAccountSchema = [
       .withMessage('金額必須為數字')
       .toFloat()
   ]
+
+export const depositWithdrawSchema = [
+    body('id')
+        .isString()
+        .withMessage('請輸入帳戶ID'),
+    body('amount')
+        .isNumeric()
+        .withMessage('金額必須為數字')
+        .toFloat()
+]
