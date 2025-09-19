@@ -9,5 +9,4 @@ app.use('/api/bank', bankRouter)
 app.get('/', (req: Request, res: Response) => res.send({ ok: true }));
 
 app.listen(port, () => {
-    console.log(`Hello World`)
 });
