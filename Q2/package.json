@@ -7,13 +7,12 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsc --watch & node dist/indes.js"
+    "dev": "tsc --watch & node dist/index.js"
   },
   "license": "ISC",
   "dependencies": {
     "express": "^5.1.0",
-    "express-validator": "^7.2.1",
-    "uuid": "^13.0.0"
+    "express-validator": "^7.2.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",

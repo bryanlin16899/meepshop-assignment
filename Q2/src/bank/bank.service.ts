@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { randomUUID as uuid } from 'crypto';
 import { Account, Transaction, TransactionType } from "../schema";
 import { CreateAccountRequest, DepositRequest, TransactionHistoryResponse, TransferRequest, withdrawRequest as WithdrawRequest } from "./types";
 
