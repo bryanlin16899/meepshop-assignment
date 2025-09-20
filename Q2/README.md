@@ -1,17 +1,18 @@
 # Simple banking system
 
 ## Quick Start
+
 ```bash
-// inside project root folder
-$ cd Q2
+# inside project root folder
+cd Q2
 
-// build docker image with no cache
-$ docker build -t simple-bank . --no-cache
+# build docker image with no cache
+docker build -t simple-bank . --no-cache
 
-// run docker container
-// port 3000 -> API server
-// port 8080 -> Unit test coverage report
-$ docker run -p 3000:3000 -p 8080:8080 simple-bank
+# run docker container
+# port 3000 -> API server
+# port 8080 -> Unit test coverage report
+docker run -p 3000:3000 -p 8080:8080 simple-bank
 ```
 
 ## Assignment Requirements
@@ -84,6 +85,6 @@ $ docker run -p 3000:3000 -p 8080:8080 simple-bank
 
 ## Test Coverage
 
-為了方便展示，每次 build docker image 時，我會執行 unit test，可以在執行 docker run 後，開啟 http://localhost:8080/ 查看。
+為了方便展示，每次 build docker image 時，會執行 unit test，可以在執行 docker run 後，開啟 http://localhost:8080 查看。
 
 ![Jest Test Coverage Report](https://pub-d3072a93d1ae4cb9b4ff48e336a3bdf0.r2.dev/testCoverage.png)
