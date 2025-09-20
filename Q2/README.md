@@ -1,7 +1,16 @@
 # Simple banking system
 
 ## Quick Start
-### Docker Compose
+```bash
+// inside project root folder
+$ cd Q2
+
+// build docker image with no cache
+$ docker build -t simple-bank . --no-cache
+
+// run docker container
+$ docker run -p 3000:3000 simple-bank
+```
 
 ## Assignment Requirements
 <table>
@@ -42,23 +51,25 @@
     </tr>
     <tr>
         <td>Generate transaction logs for each account transfer(when, how much, to what account)</td>
-        <td></td>
-        <td></td>
+        <td>✅</td>
+        <td>
+            1. /api/bank/getAllTransactionLogs<br>2./api/bank/getAccountTransactionLogs
+        </td>
     </tr>
     <tr>
         <td>Support atomic transaction</td>
-        <td></td>
-        <td></td>
+        <td>✅</td>
+        <td>使用 async-mutex 確保變更餘額的動作同一時間只會有一個 thread 執行</td>
     </tr>
     <tr>
         <td>Include unit tests & integration test</td>
-        <td></td>
-        <td></td>
+        <td>✅</td>
+        <td>使用 Jest 做 unit test</td>
     </tr>
     <tr>
         <td>Provide a docker container run server</td>
-        <td></td>
-        <td></td>
+        <td>✅</td>
+        <td>因為只有 express 的 server，這裡單純用 docker 不使用 docker compose</td>
     </tr>
 </table>
 
@@ -66,7 +77,8 @@
 - Language: Typescript
 - Framework: expressJS
 - Database: No Database, I save data in memory using Map
-- Testing: 
+- Testing: Jest
 - Documentation: Swagger
 
-
+## Test Coverage
+![Jest Test Coverage Report](https://pub-d3072a93d1ae4cb9b4ff48e336a3bdf0.r2.dev/testCoverage.png)
