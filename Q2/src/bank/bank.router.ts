@@ -17,8 +17,8 @@ const bankService = new BankService();
 router.post(
     '/createAccount', 
     validate(createAccountSchema),
-    asyncHandler((req: Request<{}, ApiResponse<any>, CreateAccountRequest>, res: Response) => {
-            const newAccount = bankService.createAccount(req.body)
+    asyncHandler(async (req: Request<{}, ApiResponse<any>, CreateAccountRequest>, res: Response) => {
+            const newAccount = await bankService.createAccount(req.body)
             res.status(201).json({ success: true, data: newAccount });
     })
 );
@@ -45,8 +45,8 @@ router.get(
 router.post(
     '/deposit',
     validate(depositWithdrawSchema),
-    asyncHandler((req: Request<any, ApiResponse<any>, DepositRequest>, res: Response) => {
-            const account = bankService.deposit(req.body);
+    asyncHandler(async (req: Request<any, ApiResponse<any>, DepositRequest>, res: Response) => {
+            const account = await bankService.deposit(req.body);
             res.json({ success: true, data: account });
     })
 )
@@ -55,8 +55,8 @@ router.post(
 router.post(
     '/withdraw',
     validate(depositWithdrawSchema),
-    asyncHandler((req: Request<any, ApiResponse<any>, withdrawRequest>, res: Response) => {
-            const account = bankService.withdraw(req.body);
+    asyncHandler(async (req: Request<any, ApiResponse<any>, withdrawRequest>, res: Response) => {
+            const account = await bankService.withdraw(req.body);
             res.json({ success: true, data: account });
     })
 )
@@ -65,8 +65,8 @@ router.post(
 router.post(
     '/transfer',
     validate(transferSchema),
-    asyncHandler((req: Request, res: Response) => {
-            const result = bankService.transfer(req.body);
+    asyncHandler(async (req: Request, res: Response) => {
+            const result = await bankService.transfer(req.body);
             res.json({ success: true, data: result });
     })
 )

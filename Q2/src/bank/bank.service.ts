@@ -1,43 +1,47 @@
 import { randomUUID as uuid } from 'crypto';
+import { Mutex } from 'async-mutex';
 import { Account, Transaction, TransactionType } from "../schema";
 import { BadRequestError, InsufficientFundsError, NotFoundError } from "../utils/errors";
 import { CreateAccountRequest, DepositRequest, TransactionHistoryResponse, TransferRequest, withdrawRequest as WithdrawRequest } from "./types";
 
 export class BankService {
-    private accounts: Map<string, Account> = new Map(); 
+    private accounts: Map<string, Account> = new Map();
     private transactions: Map<string, Transaction> = new Map();
     private accountTransactions: Map<string, string[]> = new Map();
+    private mutex = new Mutex();
 
     // 新建帳戶
-    createAccount(request: CreateAccountRequest): Account {
-        const { initialBalance = 0, name } = request;
+    async createAccount(request: CreateAccountRequest): Promise<Account> {
+        return await this.mutex.runExclusive(async () => {
+            const { initialBalance = 0, name } = request;
 
-        if (initialBalance < 0) {
-            throw new BadRequestError("存款不能為負值。")
-        }
+            if (initialBalance < 0) {
+                throw new BadRequestError("存款不能為負值。")
+            }
 
-        const account: Account = {
-            id: uuid(),
-            name: name,
-            balance: initialBalance,
-            createdAt: new Date()
-        };
+            const account: Account = {
+                id: uuid(),
+                name: name,
+                balance: initialBalance,
+                createdAt: new Date()
+            };
 
-        this.accounts.set(account.id, account);
-        this.accountTransactions.set(account.id, []);
+            this.accounts.set(account.id, account);
+            this.accountTransactions.set(account.id, []);
 
-        // 建立帳戶時有預設金額才會記錄 transaction
-        if (initialBalance > 0) {
-            this.recordTransaction({
-                fromAccountId: null,
-                toAccountId: account.id,
-                amount: initialBalance,
-                type: TransactionType.DEPOSIT,
-                description: "建立帳戶時存入。"
-            })
-        }
+            // 建立帳戶時有預設金額才會記錄 transaction
+            if (initialBalance > 0) {
+                this.recordTransaction({
+                    fromAccountId: null,
+                    toAccountId: account.id,
+                    amount: initialBalance,
+                    type: TransactionType.DEPOSIT,
+                    description: "建立帳戶時存入。"
+                })
+            }
 
-        return account;
+            return account;
+        });
     }
 
     // 取得所有帳戶
@@ -55,80 +59,86 @@ export class BankService {
     }
 
     // 存入金額到指定帳戶
-    deposit(request: DepositRequest): Account {
-        const { id, amount } = request;
+    async deposit(request: DepositRequest): Promise<Account> {
+        return await this.mutex.runExclusive(async () => {
+            const { id, amount } = request;
 
-        if (amount <= 0) {
-            throw new BadRequestError("存入金額不能為負值。")
-        }
+            if (amount <= 0) {
+                throw new BadRequestError("存入金額不能為負值。")
+            }
 
-        const account = this.getAccount(id);
-        account.balance += amount;
+            const account = this.getAccount(id);
+            account.balance += amount;
 
-        this.recordTransaction({
-            fromAccountId: null,
-            toAccountId: id,
-            amount,
-            type: TransactionType.DEPOSIT
-        })
+            this.recordTransaction({
+                fromAccountId: null,
+                toAccountId: id,
+                amount,
+                type: TransactionType.DEPOSIT
+            })
 
-        return account;
+            return account;
+        });
     }
 
     // 從指定帳戶提取金額
-    withdraw(request: WithdrawRequest): Account {
-        const { id, amount } = request;
+    async withdraw(request: WithdrawRequest): Promise<Account> {
+        return await this.mutex.runExclusive(async () => {
+            const { id, amount } = request;
 
-        if (amount <= 0) {
-            throw new BadRequestError("提款金額不能為負值。");
-        }
+            if (amount <= 0) {
+                throw new BadRequestError("提款金額不能為負值。");
+            }
 
-        const account = this.getAccount(id);
-        if (account.balance < amount) {
-            throw new InsufficientFundsError("提款金額大於帳戶餘額。")
-        }
-        account.balance -= amount
+            const account = this.getAccount(id);
+            if (account.balance < amount) {
+                throw new InsufficientFundsError("提款金額大於帳戶餘額。")
+            }
+            account.balance -= amount
 
-        this.recordTransaction({
-            fromAccountId: null,
-            toAccountId: id,
-            amount,
-            type: TransactionType.WITHDRAWAL
-        })
+            this.recordTransaction({
+                fromAccountId: null,
+                toAccountId: id,
+                amount,
+                type: TransactionType.WITHDRAWAL
+            })
 
-        return account;
+            return account;
+        });
     }
 
     // 轉帳
-    transfer(request: TransferRequest): { fromAccount: Account; toAccount: Account; } {
-        const { fromAccountId, toAccountId, amount } = request;
+    async transfer(request: TransferRequest): Promise<{ fromAccount: Account; toAccount: Account; }> {
+        return await this.mutex.runExclusive(async () => {
+            const { fromAccountId, toAccountId, amount } = request;
 
-        if (amount <= 0) {
-            throw new BadRequestError("提款金額不能為負值。");
-        }
+            if (amount <= 0) {
+                throw new BadRequestError("提款金額不能為負值。");
+            }
 
-        if (fromAccountId === toAccountId) {
-        throw new BadRequestError('轉出帳號與轉入帳號相同。');
-        }
+            if (fromAccountId === toAccountId) {
+                throw new BadRequestError('轉出帳號與轉入帳號相同。');
+            }
 
-        const fromAccount = this.getAccount(fromAccountId);
-        const toAccount = this.getAccount(toAccountId);
+            const fromAccount = this.getAccount(fromAccountId);
+            const toAccount = this.getAccount(toAccountId);
 
-        if (fromAccount.balance < amount) {
-            throw new InsufficientFundsError(`${fromAccount.id} 金額不足。餘額：${fromAccount.balance}`);
-        }
+            if (fromAccount.balance < amount) {
+                throw new InsufficientFundsError(`${fromAccount.id} 金額不足。餘額：${fromAccount.balance}`);
+            }
 
-        fromAccount.balance -= amount;
-        toAccount.balance += amount;
+            fromAccount.balance -= amount;
+            toAccount.balance += amount;
 
-        this.recordTransaction({
-            fromAccountId: fromAccountId,
-            toAccountId: toAccountId,
-            amount,
-            type: TransactionType.TRANSFER
-        })
+            this.recordTransaction({
+                fromAccountId: fromAccountId,
+                toAccountId: toAccountId,
+                amount,
+                type: TransactionType.TRANSFER
+            })
 
-        return { fromAccount, toAccount };
+            return { fromAccount, toAccount };
+        });
     }
 
     // 取得所有交易紀錄
