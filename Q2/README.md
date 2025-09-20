@@ -1,5 +1,8 @@
 # Simple banking system
 
+## Quick Start
+### Docker Compose
+
 ## Assignment Requirements
 <table>
     <tr>
@@ -66,6 +69,4 @@
 - Testing: 
 - Documentation: Swagger
 
-## Quick Start
-### Docker Compose
 

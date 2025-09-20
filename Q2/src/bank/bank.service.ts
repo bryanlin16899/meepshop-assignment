@@ -1,5 +1,6 @@
 import { randomUUID as uuid } from 'crypto';
 import { Account, Transaction, TransactionType } from "../schema";
+import { BadRequestError, InsufficientFundsError, NotFoundError } from "../utils/errors";
 import { CreateAccountRequest, DepositRequest, TransactionHistoryResponse, TransferRequest, withdrawRequest as WithdrawRequest } from "./types";
 
 export class BankService {
@@ -12,7 +13,7 @@ export class BankService {
         const { initialBalance = 0, name } = request;
 
         if (initialBalance < 0) {
-            throw new Error("存款不能為負值。")
+            throw new BadRequestError("存款不能為負值。")
         }
 
         const account: Account = {
@@ -48,7 +49,7 @@ export class BankService {
     getAccount(accountId: string): Account {
         const account = this.accounts.get(accountId)
         if (!account) {
-            throw new Error("該帳戶不存在")
+            throw new NotFoundError("該帳戶不存在")
         }
         return account
     }
@@ -58,7 +59,7 @@ export class BankService {
         const { id, amount } = request;
 
         if (amount <= 0) {
-            throw new Error("存入金額不能為負值。")
+            throw new BadRequestError("存入金額不能為負值。")
         }
 
         const account = this.getAccount(id);
@@ -79,12 +80,12 @@ export class BankService {
         const { id, amount } = request;
 
         if (amount <= 0) {
-            throw new Error("提款金額不能為負值。");
+            throw new BadRequestError("提款金額不能為負值。");
         }
 
         const account = this.getAccount(id);
         if (account.balance < amount) {
-            throw new Error("提款金額大於帳戶餘額。")
+            throw new InsufficientFundsError("提款金額大於帳戶餘額。")
         }
         account.balance -= amount
 
@@ -103,18 +104,18 @@ export class BankService {
         const { fromAccountId, toAccountId, amount } = request;
 
         if (amount <= 0) {
-            throw new Error("提款金額不能為負值。");
+            throw new BadRequestError("提款金額不能為負值。");
         }
 
         if (fromAccountId === toAccountId) {
-        throw new Error('Cannot transfer to the same account');
+        throw new BadRequestError('轉出帳號與轉入帳號相同。');
         }
 
         const fromAccount = this.getAccount(fromAccountId);
         const toAccount = this.getAccount(toAccountId);
 
         if (fromAccount.balance < amount) {
-            throw new Error(`${fromAccount.id} 金額不足。餘額：${fromAccount.balance}`);
+            throw new InsufficientFundsError(`${fromAccount.id} 金額不足。餘額：${fromAccount.balance}`);
         }
 
         fromAccount.balance -= amount;

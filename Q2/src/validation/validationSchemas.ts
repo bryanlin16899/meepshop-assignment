@@ -5,9 +5,9 @@ export const createAccountSchema = [
         .isString()
         .withMessage('請輸入帳戶名'),
     body('initialBalance')
-      .isNumeric()
-      .withMessage('金額必須為數字')
-      .toFloat()
+        .optional()
+        .isInt({min: 0})
+        .withMessage('存款不能為負值')
   ]
 
 export const depositWithdrawSchema = [

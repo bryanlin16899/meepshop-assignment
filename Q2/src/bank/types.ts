@@ -1,9 +1,14 @@
 import { Transaction } from "../schema";
 
+export interface ApiError {
+  msg: string;
+  code?: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
-  error?: string;
+  errors?: ApiError[];
 }
 
 export interface CreateAccountRequest {
