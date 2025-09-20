@@ -10,13 +10,15 @@
     "dev": "tsc --watch & node dist/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage --verbose",
+    "serve:coverage": "http-server coverage -p 8080 -c-1"
   },
   "license": "ISC",
   "dependencies": {
     "async-mutex": "^0.5.0",
     "express": "^5.1.0",
-    "express-validator": "^7.2.1"
+    "express-validator": "^7.2.1",
+    "http-server": "^14.1.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
