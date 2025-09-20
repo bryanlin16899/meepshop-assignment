@@ -1,0 +1,750 @@
+openapi: 3.0.0
+info:
+  title: Simple Banking System API
+  version: 1.0.0
+  description: |
+    A simple banking system API for Meepshop assignment
+
+    ## 系統特色 (System Features)
+    - **線程安全**: 使用 async-mutex 確保所有操作的原子性
+    - **完整交易記錄**: 自動記錄所有存款、提款和轉帳操作
+    - **錯誤處理**: 完善的錯誤處理機制和中文錯誤訊息
+    - **資料驗證**: 使用 express-validator 進行嚴格的輸入驗證
+
+    ## 業務規則 (Business Rules)
+    - 所有金額操作必須為正數
+    - 提款和轉帳不能超過帳戶餘額
+    - 不能在同一帳戶間進行轉帳
+    - 帳戶 ID 和交易 ID 使用 UUID 格式
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+components:
+  schemas:
+    Account:
+      type: object
+      required: [id, name, balance, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 帳戶唯一識別碼 (UUID format)
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        name:
+          type: string
+          minLength: 1
+          description: 帳戶持有人姓名
+          example: 張三
+        balance:
+          type: number
+          minimum: 0
+          description: 目前帳戶餘額（不能為負數）
+          example: 1500
+        createdAt:
+          type: string
+          format: date-time
+          description: 帳戶創建時間戳
+          example: 2024-09-20T09:00:00.000Z
+
+    Transaction:
+      type: object
+      required: [id, amount, type, createAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 交易唯一識別碼 (UUID format)
+          example: tx-abc123-456789-012345
+        fromAccountId:
+          type: string
+          format: uuid
+          nullable: true
+          description: 來源帳戶 ID（存款時為 null）
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        toAccountId:
+          type: string
+          format: uuid
+          nullable: true
+          description: 目標帳戶 ID（提款時為 null）
+          example: b2c3d4e5-f6g7-8901-bcde-f23456789012
+        amount:
+          type: number
+          minimum: 0
+          description: 交易金額（必須為正數）
+          example: 500
+        type:
+          type: string
+          enum: [DEPOSIT, WITHDRAWAL, TRANSFER]
+          description: 交易類型：DEPOSIT（存款）、WITHDRAWAL（提款）、TRANSFER（轉帳）
+          example: DEPOSIT
+        createAt:
+          type: string
+          format: date-time
+          description: 交易時間戳
+          example: 2024-09-20T10:30:00.000Z
+
+    ApiResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          description: 請求是否成功
+          example: true
+        data:
+          description: 回應資料（成功時包含）
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiError'
+          description: 錯誤訊息陣列（失敗時包含）
+
+    ApiError:
+      type: object
+      required: [msg]
+      properties:
+        msg:
+          type: string
+          description: 錯誤訊息（中文）
+          example: 該帳戶不存在
+        code:
+          type: string
+          description: 錯誤代碼（可選）
+          example: ACCOUNT_NOT_FOUND
+
+    CreateAccountRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: 帳戶持有人姓名
+          example: 張三
+        initialBalance:
+          type: number
+          minimum: 0
+          description: 初始帳戶餘額（可選，預設為 0）
+          default: 0
+          example: 1000
+
+    DepositWithdrawRequest:
+      type: object
+      required: [id, amount]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 帳戶 ID
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        amount:
+          type: number
+          minimum: 0.01
+          description: 存款或提款金額（必須大於 0）
+          example: 500
+
+    TransferRequest:
+      type: object
+      required: [fromAccountId, toAccountId, amount]
+      properties:
+        fromAccountId:
+          type: string
+          format: uuid
+          description: 來源帳戶 ID
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        toAccountId:
+          type: string
+          format: uuid
+          description: 目標帳戶 ID（不能與來源帳戶相同）
+          example: b2c3d4e5-f6g7-8901-bcde-f23456789012
+        amount:
+          type: number
+          minimum: 0.01
+          description: 轉帳金額（必須大於 0，且不能超過來源帳戶餘額）
+          example: 300
+
+paths:
+  /api/bank/createAccount:
+    post:
+      tags:
+        - Bank Account Management
+      summary: 創建新的銀行帳戶 (Create a new bank account)
+      description: |
+        創建一個新的銀行帳戶，可選擇性地設定初始餘額。
+        - 如果設定初始餘額 > 0，系統會自動建立一筆存款交易記錄
+        - 使用 async-mutex 確保帳戶創建的原子性操作
+        - 帳戶 ID 使用 UUID 自動生成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountRequest'
+            examples:
+              basic_account:
+                summary: 基本帳戶創建
+                value:
+                  name: "張三"
+                  initialBalance: 1000
+              zero_balance:
+                summary: 零餘額帳戶
+                value:
+                  name: "李四"
+                  initialBalance: 0
+              no_initial_balance:
+                summary: 未指定初始餘額
+                value:
+                  name: "王五"
+      responses:
+        '201':
+          description: 帳戶創建成功 (Account created successfully)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Account'
+              examples:
+                success_with_balance:
+                  summary: 成功創建帳戶（有初始餘額）
+                  value:
+                    success: true
+                    data:
+                      id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                      name: "張三"
+                      balance: 1000
+                      createdAt: "2024-09-20T10:30:00.000Z"
+                success_zero_balance:
+                  summary: 成功創建帳戶（零餘額）
+                  value:
+                    success: true
+                    data:
+                      id: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+                      name: "李四"
+                      balance: 0
+                      createdAt: "2024-09-20T10:31:00.000Z"
+        '400':
+          description: 請求錯誤 - 驗證失敗 (Bad request - validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                missing_name:
+                  summary: 缺少帳戶名稱
+                  value:
+                    success: false
+                    errors:
+                      - msg: "請輸入帳戶名"
+                negative_balance:
+                  summary: 負數初始餘額
+                  value:
+                    success: false
+                    errors:
+                      - msg: "存款不能為負值。"
+
+  /api/bank/getAllAccounts:
+    get:
+      tags:
+        - Bank Account Management
+      summary: 取得所有銀行帳戶 (Get all bank accounts)
+      description: |
+        檢索系統中所有銀行帳戶的列表。
+        - 返回所有已創建的帳戶資訊
+        - 包含帳戶 ID、名稱、餘額和創建時間
+        - 此操作為只讀，不會修改任何資料
+      responses:
+        '200':
+          description: 成功取得所有帳戶 (Successfully retrieved all accounts)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Account'
+              examples:
+                multiple_accounts:
+                  summary: 多個帳戶列表
+                  value:
+                    success: true
+                    data:
+                      - id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                        name: "張三"
+                        balance: 1500
+                        createdAt: "2024-09-20T09:00:00.000Z"
+                      - id: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+                        name: "李四"
+                        balance: 2800
+                        createdAt: "2024-09-20T09:15:00.000Z"
+                      - id: "c3d4e5f6-g7h8-9012-cdef-345678901234"
+                        name: "王五"
+                        balance: 0
+                        createdAt: "2024-09-20T09:30:00.000Z"
+                empty_list:
+                  summary: 空帳戶列表
+                  value:
+                    success: true
+                    data: []
+
+  /api/bank/getAccount:
+    get:
+      tags:
+        - Bank Account Management
+      summary: 取得特定銀行帳戶 (Get a specific bank account)
+      description: |
+        根據帳戶 ID 檢索特定銀行帳戶的詳細資訊。
+        - 需要提供有效的帳戶 ID
+        - 返回帳戶的完整資訊包括餘額和創建時間
+        - 如果帳戶不存在會返回 404 錯誤
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 要檢索的帳戶 ID (Account ID to retrieve)
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      responses:
+        '200':
+          description: 成功取得帳戶資訊 (Successfully retrieved account)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Account'
+              example:
+                success: true
+                data:
+                  id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  name: "張三"
+                  balance: 1500
+                  createdAt: "2024-09-20T09:00:00.000Z"
+        '404':
+          description: 帳戶不存在 (Account not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: false
+                errors:
+                  - msg: "該帳戶不存在"
+
+  /api/bank/deposit:
+    post:
+      tags:
+        - Bank Transactions
+      summary: 存款到帳戶 (Deposit money to an account)
+      description: |
+        將指定金額存入指定的帳戶。
+        - 使用 async-mutex 確保存款操作的原子性
+        - 自動建立存款交易記錄
+        - 存款金額必須大於 0
+        - 會更新帳戶餘額並返回更新後的帳戶資訊
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositWithdrawRequest'
+            examples:
+              standard_deposit:
+                summary: 標準存款
+                value:
+                  id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  amount: 500
+              large_deposit:
+                summary: 大額存款
+                value:
+                  id: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+                  amount: 10000
+      responses:
+        '200':
+          description: 存款成功 (Deposit successful)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Account'
+              example:
+                success: true
+                data:
+                  id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  name: "張三"
+                  balance: 2000
+                  createdAt: "2024-09-20T09:00:00.000Z"
+        '400':
+          description: 請求錯誤 - 驗證失敗 (Bad request - validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                negative_amount:
+                  summary: 負數金額
+                  value:
+                    success: false
+                    errors:
+                      - msg: "存入金額不能為負值。"
+                invalid_amount:
+                  summary: 無效金額格式
+                  value:
+                    success: false
+                    errors:
+                      - msg: "金額必須為數字"
+        '404':
+          description: 帳戶不存在 (Account not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: false
+                errors:
+                  - msg: "該帳戶不存在"
+
+  /api/bank/withdraw:
+    post:
+      tags:
+        - Bank Transactions
+      summary: 從帳戶提款 (Withdraw money from an account)
+      description: |
+        從指定帳戶提取指定金額。
+        - 使用 async-mutex 確保提款操作的原子性
+        - 自動建立提款交易記錄
+        - 提款金額必須大於 0
+        - 提款金額不能超過帳戶餘額
+        - 會更新帳戶餘額並返回更新後的帳戶資訊
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositWithdrawRequest'
+            examples:
+              standard_withdraw:
+                summary: 標準提款
+                value:
+                  id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  amount: 200
+              large_withdraw:
+                summary: 大額提款
+                value:
+                  id: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+                  amount: 5000
+      responses:
+        '200':
+          description: 提款成功 (Withdrawal successful)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Account'
+              example:
+                success: true
+                data:
+                  id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  name: "張三"
+                  balance: 800
+                  createdAt: "2024-09-20T09:00:00.000Z"
+        '400':
+          description: 請求錯誤 - 驗證失敗或餘額不足 (Bad request - validation error or insufficient funds)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                insufficient_funds:
+                  summary: 餘額不足
+                  value:
+                    success: false
+                    errors:
+                      - msg: "提款金額大於帳戶餘額。"
+                negative_amount:
+                  summary: 負數金額
+                  value:
+                    success: false
+                    errors:
+                      - msg: "提款金額不能為負值。"
+                invalid_amount:
+                  summary: 無效金額格式
+                  value:
+                    success: false
+                    errors:
+                      - msg: "金額必須為數字"
+        '404':
+          description: 帳戶不存在 (Account not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: false
+                errors:
+                  - msg: "該帳戶不存在"
+
+  /api/bank/transfer:
+    post:
+      tags:
+        - Bank Transactions
+      summary: 帳戶間轉帳 (Transfer money between accounts)
+      description: |
+        在兩個帳戶之間轉移指定金額。
+        - 使用 async-mutex 確保轉帳操作的原子性
+        - 自動建立轉帳交易記錄
+        - 轉帳金額必須大於 0
+        - 來源帳戶餘額必須足夠
+        - 不能轉帳給相同的帳戶
+        - 會同時更新兩個帳戶的餘額
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+            examples:
+              standard_transfer:
+                summary: 標準轉帳
+                value:
+                  fromAccountId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  toAccountId: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+                  amount: 300
+              large_transfer:
+                summary: 大額轉帳
+                value:
+                  fromAccountId: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+                  toAccountId: "c3d4e5f6-g7h8-9012-cdef-345678901234"
+                  amount: 10000
+      responses:
+        '200':
+          description: 轉帳成功 (Transfer successful)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          fromAccount:
+                            $ref: '#/components/schemas/Account'
+                          toAccount:
+                            $ref: '#/components/schemas/Account'
+              example:
+                success: true
+                data:
+                  fromAccount:
+                    id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                    name: "張三"
+                    balance: 1200
+                    createdAt: "2024-09-20T09:00:00.000Z"
+                  toAccount:
+                    id: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+                    name: "李四"
+                    balance: 3100
+                    createdAt: "2024-09-20T09:15:00.000Z"
+        '400':
+          description: 請求錯誤 - 驗證失敗、餘額不足或相同帳戶轉帳 (Bad request - validation error, insufficient funds, or same account transfer)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                insufficient_funds:
+                  summary: 餘額不足
+                  value:
+                    success: false
+                    errors:
+                      - msg: "a1b2c3d4-e5f6-7890-abcd-ef1234567890 金額不足。餘額：500"
+                same_account:
+                  summary: 相同帳戶轉帳
+                  value:
+                    success: false
+                    errors:
+                      - msg: "轉出帳號與轉入帳號相同。"
+                negative_amount:
+                  summary: 負數金額
+                  value:
+                    success: false
+                    errors:
+                      - msg: "提款金額不能為負值。"
+        '404':
+          description: 帳戶不存在 (One or both accounts not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                source_not_found:
+                  summary: 來源帳戶不存在
+                  value:
+                    success: false
+                    errors:
+                      - msg: "該帳戶不存在"
+                target_not_found:
+                  summary: 目標帳戶不存在
+                  value:
+                    success: false
+                    errors:
+                      - msg: "該帳戶不存在"
+
+  /api/bank/getAllTransactionLogs:
+    get:
+      tags:
+        - Transaction History
+      summary: 取得所有交易記錄 (Get all transaction logs)
+      description: |
+        檢索系統中所有交易記錄。
+        - 返回所有類型的交易：存款、提款、轉帳
+        - 交易記錄按時間倒序排列（最新的在前）
+        - 包含完整的交易詳情和時間戳
+      responses:
+        '200':
+          description: 成功取得所有交易記錄 (Successfully retrieved all transaction logs)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Transaction'
+              examples:
+                multiple_transactions:
+                  summary: 多筆交易記錄
+                  value:
+                    success: true
+                    data:
+                      - id: "tx-def456-789012-345678"
+                        fromAccountId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                        toAccountId: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+                        amount: 300
+                        type: "TRANSFER"
+                        createAt: "2024-09-20T11:00:00.000Z"
+                      - id: "tx-abc123-456789-012345"
+                        fromAccountId: null
+                        toAccountId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                        amount: 500
+                        type: "DEPOSIT"
+                        createAt: "2024-09-20T10:30:00.000Z"
+                      - id: "tx-ghi789-012345-678901"
+                        fromAccountId: null
+                        toAccountId: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+                        amount: 1000
+                        type: "DEPOSIT"
+                        createAt: "2024-09-20T09:15:00.000Z"
+                empty_transactions:
+                  summary: 無交易記錄
+                  value:
+                    success: true
+                    data: []
+
+  /api/bank/getAccountTransactionLogs:
+    get:
+      tags:
+        - Transaction History
+      summary: 取得特定帳戶交易記錄 (Get transaction logs for a specific account)
+      description: |
+        檢索特定帳戶的所有交易記錄。
+        - 包含該帳戶作為來源或目標的所有交易
+        - 交易記錄按時間倒序排列（最新的在前）
+        - 返回帳戶 ID 和對應的交易列表
+        - 如果帳戶不存在會返回 404 錯誤
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 要取得交易記錄的帳戶 ID (Account ID to get transaction logs for)
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      responses:
+        '200':
+          description: 成功取得帳戶交易記錄 (Successfully retrieved account transaction logs)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          accountId:
+                            type: string
+                            description: 帳戶 ID
+                          transactions:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Transaction'
+              examples:
+                account_with_transactions:
+                  summary: 有交易記錄的帳戶
+                  value:
+                    success: true
+                    data:
+                      accountId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                      transactions:
+                        - id: "tx-def456-789012-345678"
+                          fromAccountId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                          toAccountId: "b2c3d4e5-f6g7-8901-bcde-f23456789012"
+                          amount: 300
+                          type: "TRANSFER"
+                          createAt: "2024-09-20T11:00:00.000Z"
+                        - id: "tx-abc123-456789-012345"
+                          fromAccountId: null
+                          toAccountId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                          amount: 500
+                          type: "DEPOSIT"
+                          createAt: "2024-09-20T10:30:00.000Z"
+                        - id: "tx-initial-deposit-001"
+                          fromAccountId: null
+                          toAccountId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                          amount: 1000
+                          type: "DEPOSIT"
+                          createAt: "2024-09-20T09:00:00.000Z"
+                account_no_transactions:
+                  summary: 無交易記錄的帳戶
+                  value:
+                    success: true
+                    data:
+                      accountId: "c3d4e5f6-g7h8-9012-cdef-345678901234"
+                      transactions: []
+        '404':
+          description: 帳戶不存在 (Account not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: false
+                errors:
+                  - msg: "該帳戶不存在"
