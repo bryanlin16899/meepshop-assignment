@@ -79,7 +79,7 @@ docker run -p 3000:3000 -p 8080:8080 simple-bank
     <tr>
         <td>Provide a docker container run server</td>
         <td>✅</td>
-        <td>因為只有 express 的 server，這裡單純用 docker 不使用 docker compose</td>
+        <td>因為只有 express 的 server，這裡單純用 docker container 不使用 docker compose</td>
     </tr>
 </table>
 
