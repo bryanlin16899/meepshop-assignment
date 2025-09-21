@@ -14,7 +14,9 @@ module.exports = {
     '!src/utils/asyncHandler.ts',
     '!src/middleware/*',
     '!src/validation/*',
+    '!src/**/*.integration.test.ts',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
 };

@@ -67,7 +67,7 @@ docker run -p 3000:3000 -p 8080:8080 simple-bank
     <tr>
         <td>Include unit tests & integration test</td>
         <td>✅</td>
-        <td>使用 Jest 做 unit test</td>
+        <td>使用 Jest 做 unit test 和 integration test</td>
     </tr>
     <tr>
         <td>Provide a docker container run server</td>
@@ -83,7 +83,41 @@ docker run -p 3000:3000 -p 8080:8080 simple-bank
 - Testing: Jest
 - Documentation: Swagger
 
-## Test Coverage
+## Testing
+
+### Available Test Commands
+
+```bash
+# Run all tests (unit + integration)
+npm test
+
+# Run only unit tests
+npm run test:unit
+
+# Run only integration tests
+npm run test:integration
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run unit tests with coverage
+npm run test:coverage:unit
+
+# Run integration tests with coverage
+npm run test:coverage:integration
+
+# Watch mode for development
+npm run test:watch
+npm run test:watch:unit
+npm run test:watch:integration
+```
+
+### Test Structure
+
+- **Unit Tests**: `src/bank/bank.service.test.ts` - Tests business logic in isolation
+- **Integration Tests**: `src/bank/bank.router.integration.test.ts` - Tests API endpoints end-to-end
+
+### Test Coverage
 
 為了方便展示，每次 build docker image 時，會執行 unit test，可以在執行 docker run 後，開啟 http://localhost:8080 查看。
 
