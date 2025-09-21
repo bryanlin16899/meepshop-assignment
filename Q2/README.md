@@ -8,6 +8,8 @@ Unit test 與 Integration test 使用 jest 與 supertest。
 
 並且我寫了一個[前端頁面](http://localhost:3000)方便測試，亦可直接使用 API，相關 [swagger 文件](http://localhost:3000/swagger)可以在 docker container 執行後查看。
 
+<img src=https://pub-d3072a93d1ae4cb9b4ff48e336a3bdf0.r2.dev/simplebankdemo.gif width=600 />
+
 ## Quick Start
 ```bash
 # inside project root folder
