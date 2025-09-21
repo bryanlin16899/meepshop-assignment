@@ -97,7 +97,7 @@ if __name__ == "__main__":
         [None],
         [1],
         [1,2],
-        [1,None,2],
+        [1,None,2]
         # 可以在這裡往後加
         
     ]
@@ -116,6 +116,6 @@ if __name__ == "__main__":
         invertedTree = invertTree(tree)
         invertedTreeList = visualize(invertedTree)
         
-        print('--------------------')
-        print(f'''Test Case {i} \ninput tree: {originalTreeList} \noutput tree: {invertedTreeList}''')
+        print('--------------------\n')
+        print(f'''Test Case {i+1} \ninput tree: {originalTreeList} \noutput tree: {invertedTreeList}\n''')
     

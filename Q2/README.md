@@ -1,7 +1,14 @@
 # Simple banking system
+## Introduction
+這是一個簡易的銀行系統，我選擇使用 Express.js with Typescript。<br>
+
+支援帳戶建立、存款、提款、轉帳、交易紀錄等功能，並且使用 async-mutex 避免對帳戶金額做變動的 API 產生 race condition。<br>
+
+Unit test 與 Integration test 使用 jest 與 supertest。
+
+並且我寫了一個[前端頁面](http://localhost:3000)方便測試，亦可直接使用 API，相關 [swagger 文件](http://localhost:3000/swagger)可以在 docker container 執行後查看。
 
 ## Quick Start
-
 ```bash
 # inside project root folder
 cd Q2
@@ -10,7 +17,7 @@ cd Q2
 docker build -t simple-bank . --no-cache
 
 # run docker container
-# port 3000 -> API server
+# port 3000 -> API server and serve frontend web page
 # port 8080 -> Unit test coverage report
 docker run -p 3000:3000 -p 8080:8080 simple-bank
 ```
@@ -25,7 +32,7 @@ docker run -p 3000:3000 -p 8080:8080 simple-bank
     <tr>
         <td>Implement System by restful API </td>
         <td>✅</td>
-        <td>為了保持輕量，使用 expressJs</td>
+        <td>為了保持輕量，使用 Express.js</td>
     </tr>
     <tr>
         <td>Account balance cannot be negative</td>
@@ -67,7 +74,7 @@ docker run -p 3000:3000 -p 8080:8080 simple-bank
     <tr>
         <td>Include unit tests & integration test</td>
         <td>✅</td>
-        <td>使用 Jest 做 unit test 和 integration test</td>
+        <td>使用 Jest 與 Supertest 做 unit test 和 integration test</td>
     </tr>
     <tr>
         <td>Provide a docker container run server</td>
@@ -78,18 +85,17 @@ docker run -p 3000:3000 -p 8080:8080 simple-bank
 
 ## Technical Stacks
 - Language: Typescript
-- Framework: expressJS
+- Framework: Express.js
 - Database: No Database, I save data in memory using Map
-- Testing: Jest
+- Unit Testing: Jest
+- Integration Testing: Supertest
 - Documentation: Swagger
 
 ## Testing
-
 ### Available Test Commands
-
 ```bash
 # Run all tests (unit + integration)
-npm test
+npm run test
 
 # Run only unit tests
 npm run test:unit
@@ -99,12 +105,6 @@ npm run test:integration
 
 # Run tests with coverage
 npm run test:coverage
-
-# Run unit tests with coverage
-npm run test:coverage:unit
-
-# Run integration tests with coverage
-npm run test:coverage:integration
 
 # Watch mode for development
 npm run test:watch
