@@ -6,7 +6,7 @@ export const createAccountSchema = [
         .withMessage('請輸入帳戶名'),
     body('initialBalance')
         .optional()
-        .isInt({min: 0})
+        .isFloat({min: 0})
         .withMessage('存款不能為負值')
   ]
 

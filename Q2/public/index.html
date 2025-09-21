@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Bank System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+        .account-card {
+            background-color: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .transaction-row {
+            transition: background-color 0.2s;
+        }
+        .transaction-row:hover {
+            background-color: #f5f5f5;
+        }
+        .alert {
+            margin-top: 10px;
+        }
+        .form-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .amount-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .amount-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1 class="text-center">🏦 Simple Bank System</h1>
+            <p class="text-center mb-0">Meepshop simple bank (前端頁面方便面試官測試用)</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Alert for messages -->
+        <div id="alertContainer"></div>
+
+        <!-- Account Management Section -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">📝 新建帳戶</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="createAccountForm">
+                            <div class="mb-3">
+                                <label for="accountName" class="form-label">帳戶名稱</label>
+                                <input type="text" class="form-control" id="accountName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="initialBalance" class="form-label">初始金額 (非必填)</label>
+                                <input type="number" class="form-control" id="initialBalance" min="0" step="0.01" placeholder="0">
+                            </div>
+                            <button type="submit" class="btn btn-primary">新建</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">👥 全部帳戶</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="accountsList">
+                            <!-- Accounts will be loaded here -->
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="loadAccounts()">🔄 更新帳戶名單</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Operations Section -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">💰 存錢</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="depositForm">
+                            <div class="mb-3">
+                                <label for="depositAccount" class="form-label">帳戶</label>
+                                <select class="form-select" id="depositAccount" required>
+                                    <option value="">選擇一個帳戶...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="depositAmount" class="form-label">金額</label>
+                                <input type="number" class="form-control" id="depositAmount" min="0.01" step="0.01" required>
+                            </div>
+                            <button type="submit" class="btn btn-success">確認</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">💸 提款</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="withdrawForm">
+                            <div class="mb-3">
+                                <label for="withdrawAccount" class="form-label">帳戶</label>
+                                <select class="form-select" id="withdrawAccount" required>
+                                    <option value="">選擇一個帳戶...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="withdrawAmount" class="form-label">金額</label>
+                                <input type="number" class="form-control" id="withdrawAmount" min="0.01" step="0.01" required>
+                            </div>
+                            <button type="submit" class="btn btn-warning">確認</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">🔄 匯款</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="transferForm">
+                            <div class="mb-3">
+                                <label for="fromAccount" class="form-label">轉出帳戶</label>
+                                <select class="form-select" id="fromAccount" required>
+                                    <option value="">選擇一個帳戶...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="toAccount" class="form-label">轉入帳戶</label>
+                                <select class="form-select" id="toAccount" required>
+                                    <option value="">選擇一個帳戶...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="transferAmount" class="form-label">金額</label>
+                                <input type="number" class="form-control" id="transferAmount" min="0.01" step="0.01" required>
+                            </div>
+                            <button type="submit" class="btn btn-info">確認</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction History Section -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">📊 交易紀錄</h5>
+                        <div>
+                            <select class="form-select form-select-sm d-inline" id="filterAccount" style="width: 200px;">
+                                <option value="">全部帳戶</option>
+                            </select>
+                            <button class="btn btn-outline-primary btn-sm ms-2" onclick="loadTransactions()">🔄 更新</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>日期</th>
+                                        <th>操作</th>
+                                        <th>從</th>
+                                        <th>到</th>
+                                        <th>金額</th>
+                                        <th>交易 ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionsTable">
+                                    <!-- Transactions will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = '/api/bank';
+        let accounts = [];
+        let transactions = [];
+
+        // Utility function to show alerts
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alert);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // API call wrapper with error handling
+        async function apiCall(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.errors?.[0]?.msg || 'Unknown error occurred');
+                }
+
+                return data.data;
+            } catch (error) {
+                showAlert(`Error: ${error.message}`, 'danger');
+                throw error;
+            }
+        }
+
+        // Load and display accounts
+        async function loadAccounts() {
+            try {
+                accounts = await apiCall('/getAllAccounts');
+                displayAccounts();
+                updateAccountSelectors();
+            } catch (error) {
+                console.error('Failed to load accounts:', error);
+            }
+        }
+
+        function displayAccounts() {
+            const container = document.getElementById('accountsList');
+            if (accounts.length === 0) {
+                container.innerHTML = '<p class="text-muted">尚未建立任何帳戶.</p>';
+                return;
+            }
+
+            container.innerHTML = accounts.map(account => `
+                <div class="account-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">${account.name}</h6>
+                            <small class="text-muted">ID: ${account.id}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="h5 mb-0 amount-positive">$${account.balance.toFixed(2)}</div>
+                            <small class="text-muted">Created: ${new Date(account.createdAt).toLocaleDateString()}</small>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateAccountSelectors() {
+            const selectors = ['depositAccount', 'withdrawAccount', 'fromAccount', 'toAccount', 'filterAccount'];
+            const options = accounts.map(account =>
+                `<option value="${account.id}">${account.name} (${account.id.toString()})</option>`
+            ).join('');
+
+            selectors.forEach(selectorId => {
+                const selector = document.getElementById(selectorId);
+                const currentValue = selector.value;
+                selector.innerHTML = selectorId === 'filterAccount'
+                    ? '<option value="">全部帳戶</option>' + options
+                    : '<option value="">選擇帳戶...</option>' + options;
+                selector.value = currentValue;
+            });
+        }
+
+        // Load and display transactions
+        async function loadTransactions() {
+            try {
+                const filterAccountId = document.getElementById('filterAccount').value;
+
+                if (filterAccountId) {
+                    const data = await apiCall(`/getAccountTransactionLogs?id=${filterAccountId}`);
+                    transactions = data.transactions;
+                } else {
+                    transactions = await apiCall('/getAllTransactionLogs');
+                }
+
+                displayTransactions();
+            } catch (error) {
+                console.error('Failed to load transactions:', error);
+            }
+        }
+
+        function displayTransactions() {
+            const tbody = document.getElementById('transactionsTable');
+
+            if (transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No transactions found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = transactions.map(transaction => {
+                const fromAccount = accounts.find(acc => acc.id === transaction.fromAccountId);
+                const toAccount = accounts.find(acc => acc.id === transaction.toAccountId);
+
+                let typeIcon = '';
+                let amountClass = '';
+                switch (transaction.type) {
+                    case 'DEPOSIT':
+                        typeIcon = '💰';
+                        amountClass = 'amount-positive';
+                        break;
+                    case 'WITHDRAWAL':
+                        typeIcon = '💸';
+                        amountClass = 'amount-negative';
+                        break;
+                    case 'TRANSFER':
+                        typeIcon = '🔄';
+                        amountClass = 'amount-positive';
+                        break;
+                }
+
+                return `
+                    <tr class="transaction-row">
+                        <td>${new Date(transaction.createAt).toLocaleString()}</td>
+                        <td>${typeIcon} ${transaction.type}</td>
+                        <td>${fromAccount ? fromAccount.name : '-'}</td>
+                        <td>${toAccount ? toAccount.name : '-'}</td>
+                        <td class="${amountClass}">$${transaction.amount.toFixed(2)}</td>
+                        <td><small class="text-muted">${transaction.id.toString()}</small></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Form event handlers
+        document.getElementById('createAccountForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('accountName').value;
+            const initialBalance = parseFloat(document.getElementById('initialBalance').value) || 0;
+
+            try {
+                await apiCall('/createAccount', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, initialBalance })
+                });
+
+                showAlert(`帳戶 "${name}" 建立成功!`, 'success');
+                document.getElementById('createAccountForm').reset();
+                loadAccounts();
+                loadTransactions();
+            } catch (error) {
+                // Error already shown by apiCall
+            }
+        });
+
+        document.getElementById('depositForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = document.getElementById('depositAccount').value;
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+
+            try {
+                await apiCall('/deposit', {
+                    method: 'POST',
+                    body: JSON.stringify({ id, amount })
+                });
+
+                showAlert(`存入 $${amount.toFixed(2)} 成功!`, 'success');
+                document.getElementById('depositForm').reset();
+                loadAccounts();
+                loadTransactions();
+            } catch (error) {
+                // Error already shown by apiCall
+            }
+        });
+
+        document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = document.getElementById('withdrawAccount').value;
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+
+            try {
+                await apiCall('/withdraw', {
+                    method: 'POST',
+                    body: JSON.stringify({ id, amount })
+                });
+
+                showAlert(`提款 $${amount.toFixed(2)} 成功!`, 'success');
+                document.getElementById('withdrawForm').reset();
+                loadAccounts();
+                loadTransactions();
+            } catch (error) {
+                // Error already shown by apiCall
+            }
+        });
+
+        document.getElementById('transferForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const fromAccountId = document.getElementById('fromAccount').value;
+            const toAccountId = document.getElementById('toAccount').value;
+            const amount = parseFloat(document.getElementById('transferAmount').value);
+
+            if (fromAccountId === toAccountId) {
+                showAlert('轉出與轉入帳戶不能相同。', 'warning');
+                return;
+            }
+
+            try {
+                await apiCall('/transfer', {
+                    method: 'POST',
+                    body: JSON.stringify({ fromAccountId, toAccountId, amount })
+                });
+
+                showAlert(`轉帳 $${amount.toFixed(2)} 成功!`, 'success');
+                document.getElementById('transferForm').reset();
+                loadAccounts();
+                loadTransactions();
+            } catch (error) {
+                // Error already shown by apiCall
+            }
+        });
+
+        // Filter transactions when account selector changes
+        document.getElementById('filterAccount').addEventListener('change', loadTransactions);
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAccounts();
+            loadTransactions();
+        });
+    </script>
+</body>
+</html>
