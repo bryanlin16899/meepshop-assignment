@@ -31,7 +31,6 @@ export class ConflictError extends BaseError {
 
 export class InsufficientFundsError extends BaseError {
   constructor(message = "Insufficient funds", code?: string) {
-    // 400 is acceptable here; you may change to 422 if preferred
     super(message, 400, code);
   }
 }

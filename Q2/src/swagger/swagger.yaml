@@ -5,17 +5,10 @@ info:
   description: |
     A simple banking system API for Meepshop assignment
 
-    ## 系統特色 (System Features)
-    - **線程安全**: 使用 async-mutex 確保所有操作的原子性
-    - **完整交易記錄**: 自動記錄所有存款、提款和轉帳操作
-    - **錯誤處理**: 完善的錯誤處理機制和中文錯誤訊息
-    - **資料驗證**: 使用 express-validator 進行嚴格的輸入驗證
-
-    ## 業務規則 (Business Rules)
+    ## 業務規則
     - 所有金額操作必須為正數
     - 提款和轉帳不能超過帳戶餘額
     - 不能在同一帳戶間進行轉帳
-    - 帳戶 ID 和交易 ID 使用 UUID 格式
 
 servers:
   - url: http://localhost:3000

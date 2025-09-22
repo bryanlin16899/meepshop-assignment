@@ -11,6 +11,7 @@ Unit test 與 Integration test 使用 jest 與 supertest。
 <img src=https://pub-d3072a93d1ae4cb9b4ff48e336a3bdf0.r2.dev/simplebankdemo.gif width=600 />
 
 ## Quick Start
+### Using Docker
 ```bash
 # inside project root folder
 cd Q2
@@ -22,6 +23,21 @@ docker build -t simple-bank . --no-cache
 # port 3000 -> API server and serve frontend web page
 # port 8080 -> Unit test coverage report
 docker run -p 3000:3000 -p 8080:8080 simple-bank
+```
+
+### Using NPM
+```bash
+# node 18 or upper version
+npm i
+
+# start the server
+npm run build
+npm run start
+
+# run unit test
+npm run test:unit
+# run integration test
+npm run test:integration
 ```
 
 ## Assignment Requirements

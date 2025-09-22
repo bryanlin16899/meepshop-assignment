@@ -71,6 +71,7 @@ def visualize(root: Optional[TreeNode]) -> list[int]:
 # 主要實作，將二元樹反轉
 def invertTree(root: Optional[TreeNode]) -> Optional[TreeNode]:
     # 透過不斷地將左節點與右結點反轉，並且將下一層的 node append 到 queue 中，直到結束。
+    # Time complexity : O(n), n 為節點的數量
     if root is None:
         return None
 
