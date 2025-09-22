@@ -18,6 +18,7 @@ app.listen(port, () => {
 |--------------------------------------------------------|
  Shortcut: \b
  Frontend for test : http://localhost:3000 \b
+ API : http://localhost:3000/api/bank \b
  Swagger API documentation : http://localhost:3000/swagger \b
  Test coverage report url : http://localhost:8080
 |--------------------------------------------------------|

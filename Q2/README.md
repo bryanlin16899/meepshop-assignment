@@ -101,6 +101,9 @@ npm run test:integration
     </tr>
 </table>
 
+## API endpoints
+所有 API 與範例請在 docker container 啟動後到 Swagger 中查看。
+
 ## Technical Stacks
 - Language: Typescript
 - Framework: Express.js

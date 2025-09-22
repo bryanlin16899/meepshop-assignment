@@ -25,5 +25,6 @@ docker run -p 3000:3000 -p 8080:8080 simple-bank
 cd ..
 ```
 Frontend for test : http://localhost:3000 \
+API : http://localhost:3000/api/bank \
 Swagger API documentation : http://localhost:3000/swagger \
 Test coverage report url : http://localhost:8080
