@@ -7,6 +7,9 @@
 # 可直接複製執行
 cd Q1
 python3 ./invert_tree.py
+
+# 回到 meepshop-assignment/
+cd ..
 ```
 
 ## Q2
@@ -17,6 +20,9 @@ python3 ./invert_tree.py
 cd Q2
 docker build -t simple-bank . --no-cache
 docker run -p 3000:3000 -p 8080:8080 simple-bank
+
+# 回到 meepshop-assignment/
+cd ..
 ```
 Frontend for test : http://localhost:3000 \
 Swagger API documentation : http://localhost:3000/swagger \
