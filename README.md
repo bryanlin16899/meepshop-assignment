@@ -1,7 +1,7 @@
 # 說明
 感謝抽空 review 我的實作，以下附上 Q1, Q2 的 Quick Start 說明。
 ## Q1
-若要增加 test case 新增在 testCases 中。
+若要增加 test case 可以在 testCases 中新增。
 ```bash
 # Quick Start
 # 可直接複製執行
